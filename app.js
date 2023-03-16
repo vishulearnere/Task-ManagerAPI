@@ -56,40 +56,62 @@
 //         })
 //     } catch (error) {
 //         console.log(error)
-        
+
 //     }
 // }
 // start()
 // // console.log('Task Manager App')
 
 
+//   app.js - Main file
+//   .gitignore - Ignore files while uploading API on github
+//   .env - confidential File (has MONGO_URI) password and username
+//   node modules - modules which are installed
+//    package.json - package and their versions
+//    package-lock.json -  package version and their dependent other  package versions
+//    routes - to route request type (POST/PUT/GET/DELETE) with their defined functions
+//    controllers - control what to do  when a specific route is called (defination of function specified with each route)
+//   public - For frontend
+//   db - only to connect the data
+//   models - to define the schema and model(to run queries)
+//   errors - for defining the custom error by creating the class CustomAPIError whose super class is Error(Inbult defined by Express)
+//             and return instance  of CustomAPIError, when called constructor is invoked 
+//   middleware - req => Middleware => res=> next
+//     async.js - wrapper for async function
+//     not found - if any other URL is provided which is not handled here then returning not found 
+//     error handler - returns which error we should return 
+//     app -> controller(task.js) -> custom-error(error) [return instance of error in next if task is not found]->app.js( yaha par error handler use karo) -> error-handler.js
+//    app -> controller(task.js) -> middleware (async) [agar try  catch wala error to] -> app.js -> error handler.js 
 
 const express = require('express')
 const tasks = require('./routes/tasks')
 const notFound = require('./middleware/not-found')
+const errorHandlerMiddleware = require('./middleware/error-handler')
 const app = express()
 require('dotenv').config()
 
 
 app.use(express.static('./public'))
 
-const connectdb =  require('./db/connect')
+const connectdb = require('./db/connect')
 
 app.use(express.json())
-app.use('/api/v1/tasks',tasks)
+app.use('/api/v1/tasks', tasks)
 
 app.use(notFound)
+app.use(errorHandlerMiddleware) // In order to use custom  middleware instaed of default express one  
 
 const PORT = process.env.PORT || 3000
-const start = async()=>{
+const start = async () => {
     try {
         await connectdb(process.env.MONGO_URI)
-    app.listen(PORT,()=>{
-        console.log(`servers is listening at PORT NO.  ${PORT} ...`)})
-        
+        app.listen(PORT, () => {
+            console.log(`servers is listening at PORT NO.  ${PORT} ...`)
+        })
+
     } catch (error) {
         conosle.log(error)
-        
+
     }
 }
 start()

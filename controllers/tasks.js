@@ -1,113 +1,86 @@
+//this file has two types of  Error one when _id is validated and we don't get any data from provided id this one needs createCustomError
+// the second one is try and catch wala error which includes validation and others   
+
 const Task = require('../models/task')
+const asyncWrapper = require('../middleware/async')
+const {
+    createCustomError
+} = require('../errors/custome-error')
 
-const getAllTasks = async (req,
+const getAllTasks = asyncWrapper(async (req,
     res) => {
-    try {
-        const alltasks = await Task.find({})
-        res.status(200).json({ tasks:alltasks
-        })
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({
-            sucesss: false,
-            msg: error.message
-        })
+    const alltasks = await Task.find({})
+    res.status(200).json({
+        tasks: alltasks
+    })
+
+})
+
+const getSingleTask = asyncWrapper(async (req,
+    res, next) => {
+    const {
+        id: taskID
+    } = req.params
+    const task = await Task.findOne({
+        _id: taskID
+    })
+    if (!task) { // if task has nothing then 
+        return next(createCustomError(`No task is found with ID ${taskID}`, 404)) // here we are returning instance of customAPIError in next
+        // which has properties of error (super class) and createCustomAPI both 
     }
-}
+    return res.status(200).json({
+        task
+    })
+})
+const createTask = asyncWrapper(async (req,
+    res, next) => {
 
-const getSingleTask = async(req,
-    res) => {
-    try {
-        const {id:taskID} = req.params
-        const task = await Task.findOne({
-            _id: taskID
-        })
-        if(task){
-           return  res.status(200).json({
-               task
-            })
-        }
-        return res.status(404).json({sucesss:false,msg:`No task is found with ${taskid}`})
-    } catch (error) {
-        console.log(error.msg)
-        return res.status(500).json({
-            sucesss: false,
-            msg: error.message
-        })
+    const task = await Task.create(req.body)
+    console.log(task, req.body)
+    res.status(201).json({
+        task
+    })
+})
+const editTask = asyncWrapper(async (req,
+    res, next) => {
+
+    taskID = req.params.id
+    console.log(taskID, req.body)
+    const updatedtask = await Task.findOneAndUpdate({
+        _id: taskID
+    }, req.body, {
+        new: true,
+        runValidators: true
+    })
+    if (!updatedtask) {
+        return next(createCustomError(`No task is found with ID ${taskID}`, 404))
 
     }
-}
-const createTask = async(req,
-    res) => {
+    console.log(updatedtask)
+    return res.status(200).json({
+        sucess: true,
+        task: updatedtask
+    })
+})
+const deleteTask = asyncWrapper(async (req,
+    res, next) => {
+    taskID = req.params.id
+    // body = req.body
+    console.log(taskID)
+    const deletedtask = await Task.findOneAndDelete({
+        _id: taskID
+    })
+    console.log(taskID, deletedtask)
+    if (!deletedtask) {
+        return next(createCustomError(`No task is found with ID ${taskID}`, 404))
 
-        try{
-        const task = await Task.create(req.body)
-        console.log(task,req.body)
-        res.status(201).json({
-            task
-        })}
-        catch(error){
-            console.log(error)
-            return res.status(500).json({
-                error,
-                sucesss: false,
-                msg: error.message
-            })
-        }
-}
-const editTask = async(req,
-    res) => {
-        try{
-            taskID = req.params.id
-            // bodi =  req.body
-            // console.log(ID, body)
-            const updatedtask = await Task.findOneAndUpdate({_id:taskID}, req.body, {
-            new:true,
-            runValidators:true})
-            if (updatedtask) {
-
-                return res.status(200).json({
-                    sucess: true,
-                    task: updatedtask
-                })
-            }
-            console.log(updatedtask)
-            return res.status(404).json({msg:`no task is found with ${ID} ID`})
-        }
-    catch(error)
-    {
-        console.log(error)
-        return res.status(500).json({
-            sucesss: false,
-            msg: error.message
-        })
     }
+    return res.status(200).json({
+        sucess: true,
+        task: deletedtask
+    })
 
-}
-const deleteTask = async(req,
-    res) =>{
-    try {
-        ID = req.params.id
-        // body = req.body
-        // console.log(ID)
-        const deletedtask = await Task.findOneAndDelete({_id:ID})
-        console.log(ID, deletedtask)
-        if (deletedtask) {
-
-                return res.status(200).json({
-                    sucess: true,
-                    task: deletedtask
-                })
-            }
-        return res.status(404).json({msg:`no task is found with ${ID} ID `})
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({
-            sucesss: false,
-            msg: error.message
-        })
-    }
-}
+})
 module.exports = {
     getAllTasks,
     getSingleTask,
